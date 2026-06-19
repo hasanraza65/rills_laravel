@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 class StaffAttendanceController extends Controller
 {
     // Staff roles (excludes PARENT = 5)
-    private const STAFF_ROLES = [1, 2, 3, 4, 6, 7];
+    private const STAFF_ROLES = [3, 4,5 , 6, 7];
 
     /**
      * Returns staff in a branch with their attendance for a given date.
@@ -24,15 +24,22 @@ class StaffAttendanceController extends Controller
             'date'      => 'required|date_format:Y-m-d',
         ]);
 
-        $staff = User::where('branch_id', $request->branch_id)
-            ->whereIn('user_role', self::STAFF_ROLES)
-            ->select('id', 'name', 'user_role', 'avatar')
-            ->get();
-
         $existingMap = StaffAttendance::where('branch_id', $request->branch_id)
             ->where('date', $request->date)
             ->get()
             ->keyBy('user_id');
+
+        // Merge: users assigned to this branch + users already in attendance records
+        $branchUserIds     = User::where('branch_id', $request->branch_id)
+            ->whereIn('user_role', self::STAFF_ROLES)
+            ->pluck('id');
+        $attendanceUserIds = $existingMap->keys();
+        $allStaffIds       = $branchUserIds->merge($attendanceUserIds)->unique();
+
+        $staff = User::whereIn('id', $allStaffIds)
+            ->whereIn('user_role', self::STAFF_ROLES)
+            ->select('id', 'name', 'user_role', 'avatar')
+            ->get();
 
         $staffWithAttendance = $staff->map(function ($user) use ($existingMap) {
             $att = $existingMap->get($user->id);
@@ -121,7 +128,16 @@ class StaffAttendanceController extends Controller
         $startDate = "{$request->month}-01";
         $endDate   = date('Y-m-t', strtotime($startDate));
 
-        $staff = User::where('branch_id', $request->branch_id)
+        $branchUserIds = User::where('branch_id', $request->branch_id)
+            ->whereIn('user_role', self::STAFF_ROLES)
+            ->pluck('id');
+        $attendanceUserIds = StaffAttendance::where('branch_id', $request->branch_id)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->pluck('user_id')
+            ->unique();
+        $allStaffIds = $branchUserIds->merge($attendanceUserIds)->unique();
+
+        $staff = User::whereIn('id', $allStaffIds)
             ->whereIn('user_role', self::STAFF_ROLES)
             ->select('id', 'name', 'user_role')
             ->get();
