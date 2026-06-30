@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\LessonPlanSubjectController;
 use App\Http\Controllers\Api\QbQuestionController;
 use App\Http\Controllers\Api\StudentAttendanceController;
 use App\Http\Controllers\Api\StaffAttendanceController;
+use App\Http\Controllers\Api\DashboardController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -45,6 +46,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::get('/dashboard/overview', [DashboardController::class, 'overview']);
 
     Route::apiResource('visitors', VisitorController::class);
 
