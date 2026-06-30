@@ -35,50 +35,52 @@ class BranchController extends Controller
             'campus_phone' => 'nullable|string|max:20',
             'campus_email' => 'nullable|email|max:255',
 
-            // optional for admin creation
-            'admin_email' => 'nullable|email|max:255',
-            'admin_password' => 'nullable|string|min:6',
+            // required when no existing admin is being assigned
+            'admin_email'     => 'required_without:branch_admin_id|nullable|email|max:255|unique:users,email',
+            'admin_password'  => 'required_without:branch_admin_id|nullable|string|min:6',
             'branch_admin_id' => 'nullable|integer|exists:users,id',
         ]);
 
         $branchAdminId = $request->branch_admin_id;
+        $adminUser     = null;
 
-        // 1. If no admin provided, create new user
+        // 1. Create admin user if no existing admin provided
         if (!$branchAdminId && $request->admin_email && $request->admin_password) {
-
-            $user = User::create([
-                'name' => $request->branch_name . ' Admin',
-                'email' => $request->admin_email,
-                'password' => Hash::make($request->admin_password),
-                'user_role' => 3
+            $adminUser = User::create([
+                'name'      => $request->branch_name . ' Admin',
+                'email'     => $request->admin_email,
+                'password'  => Hash::make($request->admin_password),
+                'user_role' => 3,
             ]);
-
-            $branchAdminId = $user->id;
+            $branchAdminId = $adminUser->id;
         }
 
         // 2. Create branch
         $branch = Branch::create([
-            'added_by' => auth()->id(),
-            'branch_name' => $request->branch_name,
-            'branch_city' => $request->branch_city,
-            'branch_address' => $request->branch_address,
-            'branch_phone' => $request->branch_phone,
-
-            'branch_code' => $request->branch_code
-                ? strtoupper($request->branch_code)
-                : null,
-
-            'campus_start_date' => $request->campus_start_date,
-            'campus_phone' => $request->branch_phone,
-            'campus_email' => $request->campus_email,
-
-            'branch_admin_id' => $branchAdminId,
+            'added_by'         => auth()->id(),
+            'branch_name'      => $request->branch_name,
+            'branch_city'      => $request->branch_city,
+            'branch_address'   => $request->branch_address,
+            'branch_phone'     => $request->branch_phone,
+            'branch_code'      => $request->branch_code ? strtoupper($request->branch_code) : null,
+            'campus_start_date'=> $request->campus_start_date,
+            'campus_phone'     => $request->branch_phone,
+            'campus_email'     => $request->campus_email,
+            'branch_admin_id'  => $branchAdminId,
         ]);
 
+        // 3. Link branch_id back onto the admin user so they can scope their own data
+        if ($adminUser) {
+            $adminUser->update(['branch_id' => $branch->id]);
+        } elseif ($branchAdminId) {
+            // Existing user assigned as admin — update their branch too
+            User::where('id', $branchAdminId)->update(['branch_id' => $branch->id]);
+        }
+
         return response()->json([
-            'status' => true,
+            'status'  => true,
             'message' => 'Branch created successfully',
-            'data' => $branch
+            'data'    => $branch,
         ], 201);
     }
 

@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
+use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use App\Models\TempAddKey;
 use App\Models\ParentProfile;
 
@@ -80,7 +82,7 @@ class AuthController extends Controller
 
         if (!$user) {
             $email = $phone . '@rills.edu.pk';
-            $plainPassword = \Str::random(8);
+            $plainPassword = Str::random(8);
 
             $user = User::create([
                 'name' => $name,
@@ -132,32 +134,44 @@ class AuthController extends Controller
         ]);
     }
 
-   public function login(Request $request)
+    public function login(Request $request)
     {
         $credentials = [
-            'email' => $request->input('email'),
-            'password' => $request->input('password')
+            'email'    => $request->input('email'),
+            'password' => $request->input('password'),
         ];
-    
+
         if (!Auth::attempt($credentials)) {
-            return response()->json([
-                'message' => 'Invalid credentials'
-            ], 401);
+            return response()->json(['message' => 'Invalid credentials'], 401);
         }
-    
-        $user = Auth::user()->load('branches');
-    
+
+        $user  = $this->withBranches(Auth::user());
         $token = $user->createToken('auth_token')->plainTextToken;
-    
-        return response()->json([
-            'user' => $user,
-            'token' => $token
-        ]);
+
+        return response()->json(['user' => $user, 'token' => $token]);
     }
 
     public function user(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json($this->withBranches($request->user()));
+    }
+
+    private function withBranches(User $user): User
+    {
+        switch ((int) $user->user_role) {
+            case 1: // Super Admin — sees every branch
+                $user->setRelation('branches', Branch::orderBy('branch_name')->get());
+                break;
+            case 3: // Branch Admin — sees only their single assigned branch
+                $branch = $user->branch_id
+                    ? Branch::where('id', $user->branch_id)->get()
+                    : collect();
+                $user->setRelation('branches', $branch);
+                break;
+            default:
+                $user->setRelation('branches', collect());
+        }
+        return $user;
     }
 
     public function logout(Request $request)
