@@ -106,6 +106,7 @@ class ParentProfileController extends Controller
         // =========================
         $data['user_id'] = $user->id;
         $data['added_by'] = auth()->id();
+        $data['branch_id'] = $request->branch_id;
 
         return ParentProfile::create($data);
     }
