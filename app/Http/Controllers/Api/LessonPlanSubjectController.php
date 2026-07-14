@@ -13,6 +13,23 @@ use Illuminate\Support\Facades\Auth;
 
 class LessonPlanSubjectController extends Controller
 {
+    /** Roles allowed to manage/view any teacher's lesson-plan assignments. */
+    const MANAGER_ROLES = [1, 2, 3];
+
+    /** True if the user may manage assignments for teachers other than themselves. */
+    private function isManager($user): bool
+    {
+        return in_array((int) $user->user_role, self::MANAGER_ROLES, true);
+    }
+
+    private function forbidden()
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'You are not allowed to access this resource.',
+        ], 403);
+    }
+
     /**
      * List all teachers (user_role = 4) with their assigned subject count
      * GET /api/lesson-plan/teachers?branch_id=1
@@ -20,6 +37,12 @@ class LessonPlanSubjectController extends Controller
     public function index(Request $request)
     {
         $user  = Auth::user();
+
+        // Only managers may list teachers; a teacher has no business enumerating peers.
+        if (!$this->isManager($user)) {
+            return $this->forbidden();
+        }
+
         $query = User::where('user_role', 4)->with(['branch:id,branch_name']);
 
         if ($user->user_role !== 1) {
@@ -43,6 +66,13 @@ class LessonPlanSubjectController extends Controller
      */
     public function teacherSubjects($teacherId)
     {
+        $user = Auth::user();
+
+        // A teacher may only view their OWN subjects; managers may view anyone.
+        if (!$this->isManager($user) && (int) $user->id !== (int) $teacherId) {
+            return $this->forbidden();
+        }
+
         $teacher = User::find($teacherId);
         if (!$teacher) {
             return response()->json(['success' => false, 'message' => 'Teacher not found.'], 404);
@@ -70,6 +100,12 @@ class LessonPlanSubjectController extends Controller
      */
     public function teacherTopics($teacherId)
     {
+        $user = Auth::user();
+
+        if (!$this->isManager($user) && (int) $user->id !== (int) $teacherId) {
+            return $this->forbidden();
+        }
+
         $teacher = User::find($teacherId);
         if (!$teacher) {
             return response()->json(['success' => false, 'message' => 'Teacher not found.'], 404);
@@ -116,6 +152,11 @@ class LessonPlanSubjectController extends Controller
      */
     public function assignSubjects(Request $request, $teacherId)
     {
+        // Only managers may assign subjects to teachers.
+        if (!$this->isManager(Auth::user())) {
+            return $this->forbidden();
+        }
+
         $request->validate([
             'subject_ids'   => 'required|array|min:1',
             'subject_ids.*' => 'exists:qb_subjects,id',

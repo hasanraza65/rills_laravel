@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\StudentAttendanceController;
 use App\Http\Controllers\Api\StaffAttendanceController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\StaffController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -171,6 +172,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('roles/{id}/permissions',           [RoleController::class, 'permissions']);
     Route::put('roles/{id}/permissions',           [RoleController::class, 'updatePermissions']);
     Route::apiResource('roles', RoleController::class);
+
+    // =====================
+    // STAFF MANAGEMENT
+    // =====================
+    Route::apiResource('staff', StaffController::class);
 
 });
 

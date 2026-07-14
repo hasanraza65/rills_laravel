@@ -52,4 +52,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Branch::class, 'branch_admin_id');
     }
+
+    public function staffProfile()
+    {
+        return $this->hasOne(StaffProfile::class, 'user_id', 'id');
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'user_role', 'id');
+    }
 }
