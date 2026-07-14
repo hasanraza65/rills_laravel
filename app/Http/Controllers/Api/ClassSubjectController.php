@@ -11,6 +11,8 @@ class ClassSubjectController extends Controller
 {
     public function index(Request $request)
     {
+        $user = auth()->user();
+
         $query = ClassSubject::with([
             'class',
             'section',
@@ -21,7 +23,21 @@ class ClassSubjectController extends Controller
             $query->where('section_id', $request->section_id);
         }
 
-        $query->where('branch_id',$request->branch_id);
+        // `mine=1` scopes to the caller's own teaching assignments. Teachers have no
+        // branch_id on their user row, so this is the only way they can list subjects.
+        if ($request->boolean('mine')) {
+            $query->where('teacher_id', $user->id);
+        } elseif ($request->teacher_id) {
+            $query->where('teacher_id', $request->teacher_id);
+        }
+
+        // Fall back to the caller's branch rather than filtering on a null branch_id,
+        // which would silently match nothing and return an empty list with a 200.
+        $branchId = $request->branch_id ?: $user->branch_id;
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
 
         $data = $query->latest()->get();
 

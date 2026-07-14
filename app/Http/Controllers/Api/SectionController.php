@@ -10,8 +10,12 @@ class SectionController extends Controller
 {
     public function index(Request $request)
     {
+        // Fall back to the caller's branch. Filtering on a null branch_id matches
+        // nothing and returns an empty list with a 200 — a silent failure.
+        $branchId = $request->branch_id ?: auth()->user()->branch_id;
+
         return Section::with('schoolClass')
-            ->where('branch_id', $request->branch_id)
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->get();
     }
 

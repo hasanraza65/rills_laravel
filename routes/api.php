@@ -93,14 +93,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // =====================
     // DIARIES
     // =====================
+    // index() is role-scoped and takes section_id / class_subject_id / date / topic
+    // filters, which is what the removed teacher-diaries and class-diaries routes
+    // were for. They pointed at methods that never existed.
     Route::apiResource('diaries', DiaryController::class);
 
-    // extra filters
-    Route::get('teacher-diaries', [DiaryController::class, 'teacherDiaries']);
-    Route::get('class-diaries', [DiaryController::class, 'classDiaries']);
-
     Route::patch('diaries/{id}/status', [DiaryController::class, 'updateStatus']);
-    Route::patch('section-diaries/status', [DiaryController::class, 'updateFullStatus']);
 
 
     Route::apiResource('syllabus', SyllabusController::class);

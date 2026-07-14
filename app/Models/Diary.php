@@ -12,7 +12,7 @@ class Diary extends Model
     protected $fillable = [
         'class_subject_id',
         'topic',
-        'description',
+        'activity',
         'page_number',
         'resources',
         'link',
@@ -20,6 +20,14 @@ class Diary extends Model
         'date',
         'status',
         'branch_id',
+    ];
+
+    /**
+     * Pin the date format. An unformatted `date` cast serializes as an ISO timestamp,
+     * which silently blanks every <input type="date"> on the frontend.
+     */
+    protected $casts = [
+        'date' => 'date:Y-m-d',
     ];
 
     public function classSubject()

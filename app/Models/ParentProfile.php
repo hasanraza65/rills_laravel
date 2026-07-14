@@ -13,6 +13,10 @@ class ParentProfile extends Model
 
     protected $fillable = [
 
+        // Links the profile to its login account. The controller has always set this,
+        // but it was absent here, so mass assignment silently dropped it.
+        'user_id',
+
         'branch_id',
         'added_by',
 
