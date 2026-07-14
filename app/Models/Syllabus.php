@@ -14,15 +14,19 @@ class Syllabus extends Model
     protected $fillable = [
         'subject_id',
         'month',
+        'page',
+        'link',
         'content',
         'status',
-        'campus_id',
-        'session_id',
         'branch_id'
     ];
 
+    /**
+     * Pin the date format. An unformatted `date` cast serializes as an ISO
+     * timestamp, which silently blanks every <input type="date"> on the frontend.
+     */
     protected $casts = [
-        'month' => 'date',
+        'month' => 'date:Y-m-d',
     ];
 
     public function subject()

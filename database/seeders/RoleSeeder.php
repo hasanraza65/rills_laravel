@@ -66,7 +66,9 @@ class RoleSeeder extends Seeder
                 ['classes_sections',   true,  false, false, false],
                 ['library',            true,  true,  true,  true ],
                 ['visitors',           true,  true,  true,  true ],
-                ['syllabus',           true,  false, false, false],
+                // Branch Admin manages syllabus for any subject in their branch,
+                // not just views it.
+                ['syllabus',           true,  true,  true,  true ],
                 ['reports',            true,  false, false, false],
             ],
 
@@ -88,6 +90,7 @@ class RoleSeeder extends Seeder
                 ['student_attendance', true,  false, false, false],
                 ['fees',               true,  false, false, false],
                 ['diaries',            true,  false, false, false],
+                ['syllabus',           true,  false, false, false],
             ],
 
             // 6 - Gate Keeper

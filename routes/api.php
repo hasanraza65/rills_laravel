@@ -102,22 +102,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('diaries/{id}/status', [DiaryController::class, 'updateStatus']);
 
 
+    // index() is role-scoped and takes section_id / subject_id / date filters,
+    // which is what the removed admin/bulk-status/edit/delete-single/view routes
+    // were for. `edit` pointed at a method that never existed.
     Route::apiResource('syllabus', SyllabusController::class);
 
-    Route::prefix('syllabus')->group(function () {
-
-        Route::get('admin', [SyllabusController::class, 'adminIndex']);
-
-        Route::post('status', [SyllabusController::class, 'updateStatus']);
-
-        Route::post('bulk-status', [SyllabusController::class, 'updateFullStatus']);
-
-        Route::post('edit', [SyllabusController::class, 'editSyllabus']);
-
-        Route::post('delete-single', [SyllabusController::class, 'singleDelete']);
-
-        Route::post('view', [SyllabusController::class, 'syllabusesView']);
-    });
+    Route::patch('syllabus/{id}/status', [SyllabusController::class, 'updateStatus']);
 
     //lesson plan and questions bank
 
