@@ -38,4 +38,14 @@ class ClassSubject extends Model
     {
         return $this->hasMany(Diary::class);
     }
+
+    public function topics()
+    {
+        return $this->hasMany(QbTopic::class, 'subject_id');
+    }
+
+    public function questions()
+    {
+        return $this->hasMany(QbQuestion::class, 'subject_id');
+    }
 }

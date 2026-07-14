@@ -43,7 +43,7 @@ class QbQuestion extends Model
 
     public function subject()
     {
-        return $this->belongsTo(QbSubject::class, 'subject_id');
+        return $this->belongsTo(ClassSubject::class, 'subject_id');
     }
 
     public function topic()

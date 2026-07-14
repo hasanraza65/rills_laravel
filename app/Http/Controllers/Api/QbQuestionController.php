@@ -18,7 +18,7 @@ class QbQuestionController extends Controller
         $user  = Auth::user();
         $query = QbQuestion::with([
             'schoolClass:id,name',
-            'subject:id,name',
+            'subject:id,subject_name',
             'topic:id,name',
         ]);
 
@@ -48,7 +48,7 @@ class QbQuestionController extends Controller
     {
         $request->validate([
             'class_id'   => 'required|exists:school_classes,id',
-            'subject_id' => 'required|exists:qb_subjects,id',
+            'subject_id' => 'required|exists:class_subjects,id',
             'type'       => 'required|in:MCQ,BLANKS,TRUE_FALSE,SHORT,LONG,PIC,MATCH_COLUMN',
             'question'   => 'required|string',
         ]);
@@ -62,7 +62,7 @@ class QbQuestionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Question created successfully.',
-            'data'    => $question->load(['schoolClass:id,name', 'subject:id,name', 'topic:id,name']),
+            'data'    => $question->load(['schoolClass:id,name', 'subject:id,subject_name', 'topic:id,name']),
         ], 201);
     }
 
@@ -74,7 +74,7 @@ class QbQuestionController extends Controller
     {
         $question = QbQuestion::with([
             'schoolClass:id,name',
-            'subject:id,name',
+            'subject:id,subject_name',
             'topic:id,name',
         ])->find($id);
 
@@ -108,7 +108,7 @@ class QbQuestionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Question updated successfully.',
-            'data'    => $question->load(['schoolClass:id,name', 'subject:id,name', 'topic:id,name']),
+            'data'    => $question->load(['schoolClass:id,name', 'subject:id,subject_name', 'topic:id,name']),
         ]);
     }
 

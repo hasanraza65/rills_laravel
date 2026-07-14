@@ -21,7 +21,7 @@ class QbTopicController extends Controller
     {
         $user  = Auth::user();
         $query = QbTopic::with([
-            'subject:id,name',
+            'subject:id,subject_name',
             'schoolClass:id,name',
             'attachments',
             'objectives',
@@ -61,7 +61,7 @@ class QbTopicController extends Controller
     {
         $request->validate([
             'class_id'   => 'required|exists:school_classes,id',
-            'subject_id' => 'required|exists:qb_subjects,id',
+            'subject_id' => 'required|exists:class_subjects,id',
         ]);
 
         $created = [];
@@ -101,7 +101,7 @@ class QbTopicController extends Controller
     public function show($id)
     {
         $topic = QbTopic::with([
-            'subject:id,name',
+            'subject:id,subject_name',
             'schoolClass:id,name',
             'attachments',
             'objectives',
@@ -129,7 +129,7 @@ class QbTopicController extends Controller
 
         $request->validate([
             'name'       => 'sometimes|string|max:255',
-            'subject_id' => 'sometimes|exists:qb_subjects,id',
+            'subject_id' => 'sometimes|exists:class_subjects,id',
             'class_id'   => 'sometimes|exists:school_classes,id',
         ]);
 
@@ -141,7 +141,7 @@ class QbTopicController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Topic updated successfully.',
-            'data'    => $topic->load(['subject:id,name', 'schoolClass:id,name']),
+            'data'    => $topic->load(['subject:id,subject_name', 'schoolClass:id,name']),
         ]);
     }
 

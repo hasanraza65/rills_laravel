@@ -16,7 +16,6 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ClassSubjectController;
 use App\Http\Controllers\Api\DiaryController;
 use App\Http\Controllers\Api\SyllabusController;
-use App\Http\Controllers\Api\QbSubjectController;
 use App\Http\Controllers\Api\QbTopicController;
 use App\Http\Controllers\Api\LessonPlanSubjectController;
 use App\Http\Controllers\Api\QbQuestionController;
@@ -122,8 +121,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //lesson plan and questions bank
 
-      // ── QB Subjects ──────────────────────────────────────────────
-    Route::apiResource('qb-subjects', QbSubjectController::class);
+    // Subjects are now reused from /class-subjects — see ClassSubjectController.
 
     // ── QB Topics ────────────────────────────────────────────────
     Route::apiResource('qb-topics', QbTopicController::class);

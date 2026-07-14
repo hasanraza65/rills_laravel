@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\LessonPlanSubject;
 use App\Models\LessonPlanDoneTopic;
-use App\Models\QbSubject;
+use App\Models\ClassSubject;
 use App\Models\QbTopic;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -79,10 +79,10 @@ class LessonPlanSubjectController extends Controller
         }
 
         $assignedSubjects = LessonPlanSubject::where('user_id', $teacherId)
-            ->with(['subject.schoolClass:id,name', 'subject:id,name,class_id'])
+            ->with(['subject.class:id,name', 'subject:id,subject_name,class_id'])
             ->get();
 
-        $allSubjects = QbSubject::with('schoolClass:id,name')->get();
+        $allSubjects = ClassSubject::with(['class:id,name', 'section:id,name'])->get();
 
         return response()->json([
             'success' => true,
@@ -113,7 +113,7 @@ class LessonPlanSubjectController extends Controller
 
         $assignedSubjectIds = LessonPlanSubject::where('user_id', $teacherId)->pluck('subject_id');
 
-        $subjects = QbSubject::with(['schoolClass:id,name'])
+        $subjects = ClassSubject::with(['class:id,name', 'section:id,name'])
             ->whereIn('id', $assignedSubjectIds)
             ->get()
             ->map(function ($subject) use ($teacherId) {
@@ -159,7 +159,7 @@ class LessonPlanSubjectController extends Controller
 
         $request->validate([
             'subject_ids'   => 'required|array|min:1',
-            'subject_ids.*' => 'exists:qb_subjects,id',
+            'subject_ids.*' => 'exists:class_subjects,id',
         ]);
 
         $teacher = User::find($teacherId);
@@ -186,7 +186,7 @@ class LessonPlanSubjectController extends Controller
             'success' => true,
             'message' => 'Subjects assigned successfully.',
             'data'    => LessonPlanSubject::where('user_id', $teacherId)
-                ->with('subject:id,name')
+                ->with('subject:id,subject_name')
                 ->get(),
         ]);
     }
@@ -201,7 +201,7 @@ class LessonPlanSubjectController extends Controller
 
         $assignedSubjectIds = LessonPlanSubject::where('user_id', $user->id)->pluck('subject_id');
 
-        $subjects = QbSubject::with(['schoolClass:id,name'])
+        $subjects = ClassSubject::with(['class:id,name', 'section:id,name'])
             ->whereIn('id', $assignedSubjectIds)
             ->get()
             ->map(function ($subject) use ($user) {
@@ -236,7 +236,7 @@ class LessonPlanSubjectController extends Controller
     {
         $request->validate([
             'topic_id'   => 'required|exists:qb_topics,id',
-            'subject_id' => 'required|exists:qb_subjects,id',
+            'subject_id' => 'required|exists:class_subjects,id',
             'status'     => 'required|in:done,undone',
         ]);
 
