@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Models\TempAddKey;
 use App\Models\ParentProfile;
+use App\Models\RolePermission;
 
 class AuthController extends Controller
 {
@@ -146,6 +147,7 @@ class AuthController extends Controller
         }
 
         $user  = $this->withBranches(Auth::user());
+        $this->withPermissions($user);
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json(['user' => $user, 'token' => $token]);
@@ -153,7 +155,33 @@ class AuthController extends Controller
 
     public function user(Request $request)
     {
-        return response()->json($this->withBranches($request->user()));
+        $user = $this->withBranches($request->user());
+        $this->withPermissions($user);
+
+        return response()->json($user);
+    }
+
+    /**
+     * Attach the user's effective permission map (module_slug => actions)
+     * based on their role. The frontend uses this to gate navigation and actions.
+     */
+    private function withPermissions(User $user): User
+    {
+        $rows = RolePermission::where('role_id', (int) $user->user_role)->get();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[$row->module_slug] = [
+                'view'   => (bool) $row->can_view,
+                'create' => (bool) $row->can_create,
+                'edit'   => (bool) $row->can_edit,
+                'delete' => (bool) $row->can_delete,
+            ];
+        }
+
+        $user->setAttribute('permissions', $map);
+
+        return $user;
     }
 
     private function withBranches(User $user): User

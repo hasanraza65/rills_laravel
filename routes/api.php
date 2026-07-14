@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\QbQuestionController;
 use App\Http\Controllers\Api\StudentAttendanceController;
 use App\Http\Controllers\Api\StaffAttendanceController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\RoleController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -162,6 +163,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('report',     [StaffAttendanceController::class, 'report']);
         Route::get('summary',    [StaffAttendanceController::class, 'summary']);
     });
+
+    // =====================
+    // ROLES & PERMISSIONS
+    // =====================
+    Route::get('roles/modules',                    [RoleController::class, 'modules']);
+    Route::get('roles/{id}/permissions',           [RoleController::class, 'permissions']);
+    Route::put('roles/{id}/permissions',           [RoleController::class, 'updatePermissions']);
+    Route::apiResource('roles', RoleController::class);
 
 });
 
