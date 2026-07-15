@@ -40,12 +40,12 @@ class StaffController extends Controller
         $data = $request->validate([
             'name'                 => 'required|string|max:150',
             'father_husband_name'  => 'nullable|string|max:150',
-            'cnic'                 => 'nullable|string|max:20',
+            'cnic'                 => ['nullable', 'string', 'max:20', Rule::unique('users', 'cnic')],
             'gender'               => 'nullable|in:male,female,other',
             'dob'                  => 'nullable|date',
             'date_of_joining'      => 'nullable|date',
             'marital_status'       => 'nullable|in:single,married,divorced,widowed',
-            'contact_no'           => 'nullable|string|max:20',
+            'contact_no'           => ['nullable', 'string', 'max:20', Rule::unique('users', 'phone')],
             'whatsapp_no'          => 'nullable|string|max:20',
             'emergency_contact_no' => 'nullable|string|max:20',
             'current_address'      => 'nullable|string',
@@ -54,6 +54,9 @@ class StaffController extends Controller
             'branch_id'            => 'nullable|exists:branches,id',
             'email'                => 'nullable|email|unique:users,email',
             'password'             => 'nullable|string|min:6',
+        ], [
+            'cnic.unique'       => 'This CNIC is already registered to another user.',
+            'contact_no.unique' => 'This contact number is already registered to another user.',
         ]);
 
         $staff = DB::transaction(function () use ($data, $request) {
@@ -109,12 +112,12 @@ class StaffController extends Controller
         $data = $request->validate([
             'name'                 => 'required|string|max:150',
             'father_husband_name'  => 'nullable|string|max:150',
-            'cnic'                 => 'nullable|string|max:20',
+            'cnic'                 => ['nullable', 'string', 'max:20', Rule::unique('users', 'cnic')->ignore($user->id)],
             'gender'               => 'nullable|in:male,female,other',
             'dob'                  => 'nullable|date',
             'date_of_joining'      => 'nullable|date',
             'marital_status'       => 'nullable|in:single,married,divorced,widowed',
-            'contact_no'           => 'nullable|string|max:20',
+            'contact_no'           => ['nullable', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($user->id)],
             'whatsapp_no'          => 'nullable|string|max:20',
             'emergency_contact_no' => 'nullable|string|max:20',
             'current_address'      => 'nullable|string',
@@ -123,6 +126,9 @@ class StaffController extends Controller
             'branch_id'            => 'nullable|exists:branches,id',
             'email'                => ['nullable', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'password'             => 'nullable|string|min:6',
+        ], [
+            'cnic.unique'       => 'This CNIC is already registered to another user.',
+            'contact_no.unique' => 'This contact number is already registered to another user.',
         ]);
 
         DB::transaction(function () use ($user, $data) {
