@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\StaffProfile;
+use App\Support\RoleHierarchy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -15,16 +16,23 @@ class StaffController extends Controller
     /** Roles that count as staff (everyone except PARENT = 5). */
     const STAFF_ROLES = [1, 2, 3, 4, 6, 7];
 
+    /** Role id for branch_admin, kept scoped to their own branch. */
+    const BRANCH_ADMIN_ROLE = 3;
+
     /**
      * List staff for a branch. Staff are users with a staff role.
      */
     public function index(Request $request)
     {
+        $caller = $request->user();
+
         $query = User::with(['staffProfile', 'role'])
             ->whereIn('user_role', self::STAFF_ROLES);
 
-        // Branch scope: super admin (no branch filter) vs branch-scoped roles.
-        if ($request->filled('branch_id')) {
+        // Branch admins are always scoped to their own branch, regardless of query params.
+        if ($caller->user_role === self::BRANCH_ADMIN_ROLE) {
+            $query->where('branch_id', $caller->branch_id);
+        } elseif ($request->filled('branch_id')) {
             $query->where('branch_id', $request->branch_id);
         }
 
@@ -37,6 +45,8 @@ class StaffController extends Controller
 
     public function store(Request $request)
     {
+        $caller = $request->user();
+
         $data = $request->validate([
             'name'                 => 'required|string|max:150',
             'father_husband_name'  => 'nullable|string|max:150',
@@ -50,7 +60,7 @@ class StaffController extends Controller
             'emergency_contact_no' => 'nullable|string|max:20',
             'current_address'      => 'nullable|string',
             'permanent_address'    => 'nullable|string',
-            'user_role'            => ['required', Rule::in(self::STAFF_ROLES)],
+            'user_role'            => ['required', Rule::in(RoleHierarchy::assignableRoleIds($caller->user_role))],
             'branch_id'            => 'nullable|exists:branches,id',
             'email'                => 'nullable|email|unique:users,email',
             'password'             => 'nullable|string|min:6',
@@ -58,6 +68,11 @@ class StaffController extends Controller
             'cnic.unique'       => 'This CNIC is already registered to another user.',
             'contact_no.unique' => 'This contact number is already registered to another user.',
         ]);
+
+        // Branch admins can only ever create staff within their own branch.
+        if ($caller->user_role === self::BRANCH_ADMIN_ROLE) {
+            $data['branch_id'] = $caller->branch_id;
+        }
 
         $staff = DB::transaction(function () use ($data, $request) {
             // Derive login credentials. Email/password are auto-generated when not
@@ -96,18 +111,17 @@ class StaffController extends Controller
         return response()->json(['data' => $staff], 201);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $staff = User::with(['staffProfile', 'role'])
-            ->whereIn('user_role', self::STAFF_ROLES)
-            ->findOrFail($id);
+        $staff = $this->scopedStaffQuery($request->user())->findOrFail($id);
 
         return response()->json(['data' => $staff]);
     }
 
     public function update(Request $request, $id)
     {
-        $user = User::whereIn('user_role', self::STAFF_ROLES)->findOrFail($id);
+        $caller = $request->user();
+        $user = $this->scopedStaffQuery($caller)->findOrFail($id);
 
         $data = $request->validate([
             'name'                 => 'required|string|max:150',
@@ -122,7 +136,7 @@ class StaffController extends Controller
             'emergency_contact_no' => 'nullable|string|max:20',
             'current_address'      => 'nullable|string',
             'permanent_address'    => 'nullable|string',
-            'user_role'            => ['required', Rule::in(self::STAFF_ROLES)],
+            'user_role'            => ['required', Rule::in(RoleHierarchy::assignableRoleIds($caller->user_role))],
             'branch_id'            => 'nullable|exists:branches,id',
             'email'                => ['nullable', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'password'             => 'nullable|string|min:6',
@@ -130,6 +144,11 @@ class StaffController extends Controller
             'cnic.unique'       => 'This CNIC is already registered to another user.',
             'contact_no.unique' => 'This contact number is already registered to another user.',
         ]);
+
+        // Branch admins can only ever keep staff within their own branch.
+        if ($caller->user_role === self::BRANCH_ADMIN_ROLE) {
+            $data['branch_id'] = $caller->branch_id;
+        }
 
         DB::transaction(function () use ($user, $data) {
             $user->update([
@@ -165,12 +184,27 @@ class StaffController extends Controller
         return response()->json(['data' => $user->fresh(['staffProfile', 'role'])]);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $user = User::whereIn('user_role', self::STAFF_ROLES)->findOrFail($id);
+        $user = $this->scopedStaffQuery($request->user())->findOrFail($id);
         $user->delete(); // staff_profiles row cascades on delete
 
         return response()->json(['message' => 'Staff member deleted.']);
+    }
+
+    /**
+     * Staff query scoped to the caller's own branch when they're a branch admin,
+     * so branch admins can't view/edit/delete staff in other branches.
+     */
+    private function scopedStaffQuery(User $caller)
+    {
+        $query = User::with(['staffProfile', 'role'])->whereIn('user_role', self::STAFF_ROLES);
+
+        if ($caller->user_role === self::BRANCH_ADMIN_ROLE) {
+            $query->where('branch_id', $caller->branch_id);
+        }
+
+        return $query;
     }
 
     /**

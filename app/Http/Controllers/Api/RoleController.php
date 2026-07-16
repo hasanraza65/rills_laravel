@@ -6,11 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\RolePermission;
 use App\Models\User;
+use App\Support\RoleHierarchy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
+    /** Only these tiers may manage Roles & Permissions at all, matching the seeded module access. */
+    const MANAGER_ROLES = [1, 2];
+
     const MODULES = [
         ['slug' => 'dashboard',          'name' => 'Dashboard',           'group' => 'General'],
         ['slug' => 'students',           'name' => 'Students',            'group' => 'Academic'],
@@ -31,32 +36,61 @@ class RoleController extends Controller
         ['slug' => 'reports',            'name' => 'Reports',             'group' => 'Reports'],
     ];
 
-    public function index()
+    /** Reject anyone outside Super Admin / Admin before they can touch role data. */
+    private function authorizeManager(User $caller): void
     {
-        $roles = Role::withCount('permissions')->get()->map(function ($role) {
-            return [
-                'id'               => $role->id,
-                'name'             => $role->name,
-                'slug'             => $role->slug,
-                'description'      => $role->description,
-                'color'            => $role->color,
-                'is_system'        => $role->is_system,
-                'user_count'       => User::where('user_role', $role->id)->count(),
-                'permissions_count'=> $role->permissions_count,
-                'created_at'       => $role->created_at,
-            ];
-        });
+        abort_unless(in_array($caller->user_role, self::MANAGER_ROLES, true), 403, 'You are not authorized to manage roles & permissions.');
+    }
+
+    /** A system role (e.g. Super Admin) can only be viewed/edited by callers whose tier covers it. */
+    private function authorizeRoleAccess(User $caller, Role $role): void
+    {
+        if ($role->is_system && !in_array($role->id, RoleHierarchy::assignableRoleIds($caller->user_role), true)) {
+            abort(403, 'You are not authorized to manage this role.');
+        }
+    }
+
+    public function index(Request $request)
+    {
+        $caller = $request->user();
+        $this->authorizeManager($caller);
+        $assignableIds = RoleHierarchy::assignableRoleIds($caller->user_role);
+
+        $roles = Role::withCount('permissions')->get()
+            ->filter(fn ($role) => !$role->is_system || in_array($role->id, $assignableIds, true))
+            ->values()
+            ->map(function ($role) {
+                return [
+                    'id'               => $role->id,
+                    'name'             => $role->name,
+                    'slug'             => $role->slug,
+                    'description'      => $role->description,
+                    'color'            => $role->color,
+                    'is_system'        => $role->is_system,
+                    'user_count'       => User::where('user_role', $role->id)->count(),
+                    'permissions_count'=> $role->permissions_count,
+                    'created_at'       => $role->created_at,
+                ];
+            });
 
         return response()->json(['data' => $roles]);
     }
 
     public function store(Request $request)
     {
+        $caller = $request->user();
+        $this->authorizeManager($caller);
+
+        // A role may be copied from if it's within the caller's tier, or it's a
+        // custom role (custom roles are already bounded by this same rule at creation time).
+        $customRoleIds = Role::where('is_system', false)->pluck('id')->all();
+        $copyableIds = array_merge(RoleHierarchy::assignableRoleIds($caller->user_role), $customRoleIds);
+
         $data = $request->validate([
             'name'        => 'required|string|max:100',
             'description' => 'nullable|string|max:255',
             'color'       => 'nullable|string|max:20',
-            'copy_from'   => 'nullable|exists:roles,id',
+            'copy_from'   => ['nullable', 'exists:roles,id', Rule::in($copyableIds)],
         ]);
 
         $slug = Str::slug($data['name']);
@@ -93,7 +127,11 @@ class RoleController extends Controller
 
     public function update(Request $request, $id)
     {
+        $caller = $request->user();
+        $this->authorizeManager($caller);
+
         $role = Role::findOrFail($id);
+        $this->authorizeRoleAccess($caller, $role);
 
         $data = $request->validate([
             'name'        => 'required|string|max:100',
@@ -106,9 +144,13 @@ class RoleController extends Controller
         return response()->json(['data' => $role->fresh()]);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        $caller = $request->user();
+        $this->authorizeManager($caller);
+
         $role = Role::findOrFail($id);
+        $this->authorizeRoleAccess($caller, $role);
 
         if ($role->is_system) {
             return response()->json(['message' => 'System roles cannot be deleted.'], 403);
@@ -126,14 +168,20 @@ class RoleController extends Controller
         return response()->json(['message' => 'Role deleted.']);
     }
 
-    public function modules()
+    public function modules(Request $request)
     {
+        $this->authorizeManager($request->user());
+
         return response()->json(['data' => self::MODULES]);
     }
 
-    public function permissions($id)
+    public function permissions(Request $request, $id)
     {
+        $caller = $request->user();
+        $this->authorizeManager($caller);
+
         $role = Role::with('permissions')->findOrFail($id);
+        $this->authorizeRoleAccess($caller, $role);
 
         $map = [];
         foreach ($role->permissions as $p) {
@@ -175,7 +223,11 @@ class RoleController extends Controller
 
     public function updatePermissions(Request $request, $id)
     {
+        $caller = $request->user();
+        $this->authorizeManager($caller);
+
         $role = Role::findOrFail($id);
+        $this->authorizeRoleAccess($caller, $role);
 
         $data = $request->validate([
             'permissions'               => 'required|array',
