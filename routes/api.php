@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\StaffAttendanceController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\StaffController;
+use App\Http\Controllers\Api\UserPermissionController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -72,7 +73,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/verify_admission_key', [AuthController::class, 'checkTempKey']);
 
-    Route::apiResource('branch', BranchController::class);
+    // Split (rather than apiResource) so each verb can carry its own
+    // permission:branches,<action> check — index/show=view, store=create,
+    // update=edit, destroy=delete.
+    Route::get('branch',          [BranchController::class, 'index'])->middleware('permission:branches,view');
+    Route::get('branch/{id}',     [BranchController::class, 'show'])->middleware('permission:branches,view');
+    Route::post('branch',         [BranchController::class, 'store'])->middleware('permission:branches,create');
+    Route::put('branch/{id}',     [BranchController::class, 'update'])->middleware('permission:branches,edit');
+    Route::patch('branch/{id}',   [BranchController::class, 'update'])->middleware('permission:branches,edit');
+    Route::delete('branch/{id}',  [BranchController::class, 'destroy'])->middleware('permission:branches,delete');
 
     Route::prefix('invoices')->group(function () {
         Route::post('/create', [InvoiceController::class, 'store']);
@@ -135,22 +144,22 @@ Route::middleware('auth:sanctum')->group(function () {
     // STUDENT ATTENDANCE
     // =====================
     Route::prefix('attendance/students')->group(function () {
-        Route::get('section',    [StudentAttendanceController::class, 'sectionView']);
-        Route::post('mark',      [StudentAttendanceController::class, 'mark']);
-        Route::get('report',     [StudentAttendanceController::class, 'report']);
-        Route::get('parent-view',[StudentAttendanceController::class, 'parentView']);
-        Route::get('my-children',[StudentAttendanceController::class, 'myChildren']);
-        Route::get('summary',    [StudentAttendanceController::class, 'summary']);
+        Route::get('section',    [StudentAttendanceController::class, 'sectionView'])->middleware('permission:student_attendance,view');
+        Route::post('mark',      [StudentAttendanceController::class, 'mark'])->middleware('permission:student_attendance,create');
+        Route::get('report',     [StudentAttendanceController::class, 'report'])->middleware('permission:student_attendance,view');
+        Route::get('parent-view',[StudentAttendanceController::class, 'parentView'])->middleware('permission:student_attendance,view');
+        Route::get('my-children',[StudentAttendanceController::class, 'myChildren'])->middleware('permission:student_attendance,view');
+        Route::get('summary',    [StudentAttendanceController::class, 'summary'])->middleware('permission:student_attendance,view');
     });
 
     // =====================
     // STAFF ATTENDANCE
     // =====================
     Route::prefix('attendance/staff')->group(function () {
-        Route::get('branch-view',[StaffAttendanceController::class, 'branchView']);
-        Route::post('mark',      [StaffAttendanceController::class, 'mark']);
-        Route::get('report',     [StaffAttendanceController::class, 'report']);
-        Route::get('summary',    [StaffAttendanceController::class, 'summary']);
+        Route::get('branch-view',[StaffAttendanceController::class, 'branchView'])->middleware('permission:staff_attendance,view');
+        Route::post('mark',      [StaffAttendanceController::class, 'mark'])->middleware('permission:staff_attendance,create');
+        Route::get('report',     [StaffAttendanceController::class, 'report'])->middleware('permission:staff_attendance,view');
+        Route::get('summary',    [StaffAttendanceController::class, 'summary'])->middleware('permission:staff_attendance,view');
     });
 
     // =====================
@@ -160,6 +169,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('roles/{id}/permissions',           [RoleController::class, 'permissions']);
     Route::put('roles/{id}/permissions',           [RoleController::class, 'updatePermissions']);
     Route::apiResource('roles', RoleController::class);
+
+    // =====================
+    // PER-USER PERMISSION OVERRIDES
+    // =====================
+    Route::get('users/{id}/permissions', [UserPermissionController::class, 'show']);
+    Route::put('users/{id}/permissions', [UserPermissionController::class, 'update']);
 
     // =====================
     // STAFF MANAGEMENT

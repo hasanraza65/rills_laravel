@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Models\TempAddKey;
 use App\Models\ParentProfile;
-use App\Models\RolePermission;
+use App\Support\PermissionResolver;
 
 class AuthController extends Controller
 {
@@ -162,24 +162,13 @@ class AuthController extends Controller
     }
 
     /**
-     * Attach the user's effective permission map (module_slug => actions)
-     * based on their role. The frontend uses this to gate navigation and actions.
+     * Attach the user's effective permission map (module_slug => actions),
+     * i.e. their role's defaults overlaid with any per-user overrides.
+     * The frontend uses this to gate navigation and actions.
      */
     private function withPermissions(User $user): User
     {
-        $rows = RolePermission::where('role_id', (int) $user->user_role)->get();
-
-        $map = [];
-        foreach ($rows as $row) {
-            $map[$row->module_slug] = [
-                'view'   => (bool) $row->can_view,
-                'create' => (bool) $row->can_create,
-                'edit'   => (bool) $row->can_edit,
-                'delete' => (bool) $row->can_delete,
-            ];
-        }
-
-        $user->setAttribute('permissions', $map);
+        $user->setAttribute('permissions', PermissionResolver::effectivePermissions($user));
 
         return $user;
     }

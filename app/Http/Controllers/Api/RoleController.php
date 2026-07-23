@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\RolePermission;
 use App\Models\User;
+use App\Support\PermissionResolver;
 use App\Support\RoleHierarchy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -14,27 +15,9 @@ use Illuminate\Validation\Rule;
 class RoleController extends Controller
 {
     /** Only these tiers may manage Roles & Permissions at all, matching the seeded module access. */
-    const MANAGER_ROLES = [1, 2];
+    const MANAGER_ROLES = PermissionResolver::PRIVILEGED_ROLES;
 
-    const MODULES = [
-        ['slug' => 'dashboard',          'name' => 'Dashboard',           'group' => 'General'],
-        ['slug' => 'students',           'name' => 'Students',            'group' => 'Academic'],
-        ['slug' => 'families',           'name' => 'Parents & Families',  'group' => 'Academic'],
-        ['slug' => 'diaries',            'name' => 'Diaries',             'group' => 'Academic'],
-        ['slug' => 'syllabus',           'name' => 'Syllabus',            'group' => 'Academic'],
-        ['slug' => 'lesson_plans',       'name' => 'Lesson Plans',        'group' => 'Academic'],
-        ['slug' => 'question_bank',      'name' => 'Question Bank',       'group' => 'Academic'],
-        ['slug' => 'student_attendance', 'name' => 'Student Attendance',  'group' => 'Attendance'],
-        ['slug' => 'staff_attendance',   'name' => 'Staff Attendance',    'group' => 'Attendance'],
-        ['slug' => 'fees',               'name' => 'Fee & Finance',       'group' => 'Finance'],
-        ['slug' => 'staff',              'name' => 'Staff Management',    'group' => 'Administration'],
-        ['slug' => 'branches',           'name' => 'Branches',            'group' => 'Administration'],
-        ['slug' => 'classes_sections',   'name' => 'Classes & Sections',  'group' => 'Administration'],
-        ['slug' => 'visitors',           'name' => 'Visitors / Gate',     'group' => 'Administration'],
-        ['slug' => 'library',            'name' => 'Library',             'group' => 'Administration'],
-        ['slug' => 'roles',              'name' => 'Roles & Permissions', 'group' => 'Administration'],
-        ['slug' => 'reports',            'name' => 'Reports',             'group' => 'Reports'],
-    ];
+    const MODULES = PermissionResolver::MODULES;
 
     /** Reject anyone outside Super Admin / Admin before they can touch role data. */
     private function authorizeManager(User $caller): void
