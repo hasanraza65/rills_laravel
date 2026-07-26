@@ -14,7 +14,10 @@ class SchoolClassController extends Controller
         // nothing and returns an empty list with a 200 — a silent failure.
         $branchId = $request->branch_id ?: auth()->user()->branch_id;
 
-        return SchoolClass::with('sections')
+        return SchoolClass::with([
+                'addedByUser',
+                'sections' => fn ($q) => $q->withCount('subjects'),
+            ])
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->get();
     }
@@ -33,7 +36,7 @@ class SchoolClassController extends Controller
 
     public function show($id)
     {
-        return SchoolClass::with('sections')->findOrFail($id);
+        return SchoolClass::with(['addedByUser', 'sections' => fn ($q) => $q->withCount('subjects')])->findOrFail($id);
     }
 
     public function update(Request $request, $id)

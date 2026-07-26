@@ -14,7 +14,7 @@ class SectionController extends Controller
         // nothing and returns an empty list with a 200 — a silent failure.
         $branchId = $request->branch_id ?: auth()->user()->branch_id;
 
-        return Section::with('schoolClass')
+        return Section::with(['schoolClass', 'addedByUser'])
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->get();
     }
@@ -34,7 +34,7 @@ class SectionController extends Controller
 
     public function show($id)
     {
-        return Section::with('schoolClass')->findOrFail($id);
+        return Section::with(['schoolClass', 'addedByUser'])->findOrFail($id);
     }
 
     public function update(Request $request, $id)

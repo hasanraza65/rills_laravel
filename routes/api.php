@@ -25,6 +25,11 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\UserPermissionController;
+use App\Http\Controllers\Api\TimetableGroupController;
+use App\Http\Controllers\Api\TimetableActivityController;
+use App\Http\Controllers\Api\TimetablePeriodSetController;
+use App\Http\Controllers\Api\TimetableController;
+use App\Http\Controllers\Api\TimetableSlotController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -161,6 +166,46 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('report',     [StaffAttendanceController::class, 'report'])->middleware('permission:staff_attendance,view');
         Route::get('summary',    [StaffAttendanceController::class, 'summary'])->middleware('permission:staff_attendance,view');
     });
+
+    // =====================
+    // TIME TABLE
+    // =====================
+    Route::prefix('timetable-groups')->group(function () {
+        Route::get('/',        [TimetableGroupController::class, 'index'])->middleware('permission:timetable,view');
+        Route::get('/{id}',    [TimetableGroupController::class, 'show'])->middleware('permission:timetable,view');
+        Route::post('/',       [TimetableGroupController::class, 'store'])->middleware('permission:timetable,create');
+        Route::put('/{id}',    [TimetableGroupController::class, 'update'])->middleware('permission:timetable,edit');
+        Route::delete('/{id}', [TimetableGroupController::class, 'destroy'])->middleware('permission:timetable,delete');
+    });
+
+    Route::prefix('timetable-activities')->group(function () {
+        Route::get('/',        [TimetableActivityController::class, 'index'])->middleware('permission:timetable,view');
+        Route::post('/',       [TimetableActivityController::class, 'store'])->middleware('permission:timetable,create');
+        Route::put('/{id}',    [TimetableActivityController::class, 'update'])->middleware('permission:timetable,edit');
+        Route::delete('/{id}', [TimetableActivityController::class, 'destroy'])->middleware('permission:timetable,delete');
+    });
+
+    Route::prefix('timetable-period-sets')->group(function () {
+        Route::get('/',        [TimetablePeriodSetController::class, 'index'])->middleware('permission:timetable,view');
+        Route::get('/{id}',    [TimetablePeriodSetController::class, 'show'])->middleware('permission:timetable,view');
+        Route::post('/',       [TimetablePeriodSetController::class, 'store'])->middleware('permission:timetable,create');
+        Route::put('/{id}',    [TimetablePeriodSetController::class, 'update'])->middleware('permission:timetable,edit');
+        Route::delete('/{id}', [TimetablePeriodSetController::class, 'destroy'])->middleware('permission:timetable,delete');
+    });
+
+    Route::prefix('timetables')->group(function () {
+        Route::get('/',                 [TimetableController::class, 'index'])->middleware('permission:timetable,view');
+        Route::get('/{id}',             [TimetableController::class, 'show'])->middleware('permission:timetable,view');
+        Route::post('/',                [TimetableController::class, 'store'])->middleware('permission:timetable,create');
+        Route::put('/{id}',             [TimetableController::class, 'update'])->middleware('permission:timetable,edit');
+        Route::post('/{id}/regenerate', [TimetableController::class, 'regenerate'])->middleware('permission:timetable,edit');
+        Route::delete('/{id}',          [TimetableController::class, 'destroy'])->middleware('permission:timetable,delete');
+        Route::get('/{id}/slots',       [TimetableController::class, 'slots'])->middleware('permission:timetable,view');
+        Route::put('/{id}/slots/{slotId}', [TimetableSlotController::class, 'update'])->middleware('permission:timetable,edit');
+        Route::get('/{id}/print/{day}',    [TimetableController::class, 'printDaily'])->middleware('permission:timetable,view');
+    });
+
+    Route::get('teacher-timetable/{teacherId}', [TimetableController::class, 'teacherPrint'])->middleware('permission:timetable,view');
 
     // =====================
     // ROLES & PERMISSIONS
