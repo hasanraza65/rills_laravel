@@ -195,6 +195,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('timetables')->group(function () {
         Route::get('/',                 [TimetableController::class, 'index'])->middleware('permission:timetable,view');
+        Route::get('/teacher-busy-slots', [TimetableController::class, 'teacherBusySlots'])->middleware('permission:timetable,view');
         Route::get('/{id}',             [TimetableController::class, 'show'])->middleware('permission:timetable,view');
         Route::post('/',                [TimetableController::class, 'store'])->middleware('permission:timetable,create');
         Route::put('/{id}',             [TimetableController::class, 'update'])->middleware('permission:timetable,edit');

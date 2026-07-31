@@ -23,11 +23,40 @@ class TimetableController extends Controller
             ->get();
     }
 
+    /**
+     * Every teacher-assigned slot across this branch's ACTIVE Timetables, so the
+     * Period Allocation Grid can pre-disable a teacher in the picker when they're
+     * already booked elsewhere at an overlapping day/time — mirrors the same
+     * overlap rule enforced server-side in TimetableSlotController::assertTeacherFree.
+     */
+    public function teacherBusySlots(Request $request)
+    {
+        $branchId = $request->query('branch_id') ?: auth()->user()->branch_id;
+
+        return TimetableSlot::whereNotNull('teacher_id')
+            ->whereHas('timetable', fn ($q) => $q->where('branch_id', $branchId)->where('is_active', true))
+            ->with(['timetable.group:id,name', 'section:id,name'])
+            ->get(['id', 'timetable_id', 'section_id', 'day_of_week', 'teacher_id', 'start_time', 'end_time'])
+            ->map(fn ($slot) => [
+                'id' => $slot->id,
+                'teacher_id' => $slot->teacher_id,
+                'day_of_week' => $slot->day_of_week,
+                'start_time' => $slot->start_time,
+                'end_time' => $slot->end_time,
+                'group_name' => $slot->timetable?->group?->name,
+                'section_name' => $slot->section?->name,
+            ])
+            ->values();
+    }
+
     public function store(Request $request)
     {
         $data = $this->validateHeader($request);
+        $copyFromTimetableId = $request->validate([
+            'copy_from_timetable_id' => 'nullable|exists:timetables,id',
+        ])['copy_from_timetable_id'] ?? null;
 
-        $timetable = DB::transaction(function () use ($data) {
+        $timetable = DB::transaction(function () use ($data, $copyFromTimetableId) {
             $timetable = Timetable::create([
                 ...$data,
                 'is_active' => $data['is_active'] ?? true,
@@ -37,10 +66,43 @@ class TimetableController extends Controller
 
             $this->generateSlots($timetable);
 
+            if ($copyFromTimetableId) {
+                $this->copySlotAssignments($copyFromTimetableId, $timetable);
+            }
+
             return $timetable;
         });
 
         return $timetable->load(['group', 'periodSet']);
+    }
+
+    /**
+     * Copies every Subject/Activity/Teacher assignment from an existing Timetable's
+     * slots into this newly-created one, matched by (section, day, period) — used by
+     * the "copy settings from an existing Timetable" option on the create form.
+     * Bypasses the per-cell teacher conflict check (assertTeacherFree in
+     * TimetableSlotController) since this is a bulk copy, not an interactive edit —
+     * if the source Timetable is still Active when this copy is also made Active,
+     * the same teacher could end up double-booked across both until one is
+     * deactivated or the assignments are adjusted.
+     */
+    private function copySlotAssignments(int $sourceTimetableId, Timetable $newTimetable): void
+    {
+        $sourceSlots = TimetableSlot::where('timetable_id', $sourceTimetableId)
+            ->where(fn ($q) => $q->whereNotNull('class_subject_id')->orWhereNotNull('timetable_activity_id'))
+            ->get(['section_id', 'day_of_week', 'period_number', 'class_subject_id', 'timetable_activity_id', 'teacher_id']);
+
+        foreach ($sourceSlots as $source) {
+            TimetableSlot::where('timetable_id', $newTimetable->id)
+                ->where('section_id', $source->section_id)
+                ->where('day_of_week', $source->day_of_week)
+                ->where('period_number', $source->period_number)
+                ->update([
+                    'class_subject_id' => $source->class_subject_id,
+                    'timetable_activity_id' => $source->timetable_activity_id,
+                    'teacher_id' => $source->teacher_id,
+                ]);
+        }
     }
 
     public function show($id)

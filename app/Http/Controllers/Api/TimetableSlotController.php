@@ -11,9 +11,9 @@ use Illuminate\Validation\ValidationException;
 class TimetableSlotController extends Controller
 {
     /**
-     * The per-cell "Add" action: assign an academic subject (teacher implied by the
-     * ClassSubject row) or a non-teaching activity (optional duty teacher) to one
-     * period cell, or clear it by sending both ids as null.
+     * The per-cell "Add" action: assign an academic subject or a non-teaching activity
+     * to one period cell, with the teacher picked independently (any staff member
+     * except Super Admin), or clear it by sending both ids as null.
      */
     public function update(Request $request, $timetableId, $slotId)
     {
@@ -39,9 +39,6 @@ class TimetableSlotController extends Controller
                     'class_subject_id' => 'This subject is not assigned to this section.',
                 ]);
             }
-
-            // The teacher is implied by the subject assignment, not client-controlled.
-            $data['teacher_id'] = $classSubject->teacher_id;
         }
 
         if (!empty($data['teacher_id'])) {
