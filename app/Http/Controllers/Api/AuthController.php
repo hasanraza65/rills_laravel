@@ -146,6 +146,11 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
+        if (!Auth::user()->is_active) {
+            Auth::logout();
+            return response()->json(['message' => 'Your account has been deactivated. Please contact your administrator.'], 403);
+        }
+
         $user  = $this->withBranches(Auth::user());
         $this->withPermissions($user);
         $token = $user->createToken('auth_token')->plainTextToken;
