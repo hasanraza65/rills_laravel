@@ -19,6 +19,7 @@ class PermissionResolver
         ['slug' => 'syllabus',           'name' => 'Syllabus',            'group' => 'Academic'],
         ['slug' => 'lesson_plans',       'name' => 'Lesson Plans',        'group' => 'Academic'],
         ['slug' => 'question_bank',      'name' => 'Question Bank',       'group' => 'Academic'],
+        ['slug' => 'timetable',          'name' => 'Time Table',          'group' => 'Academic'],
         ['slug' => 'student_attendance', 'name' => 'Student Attendance',  'group' => 'Attendance'],
         ['slug' => 'staff_attendance',   'name' => 'Staff Attendance',    'group' => 'Attendance'],
         ['slug' => 'fees',               'name' => 'Fee & Finance',       'group' => 'Finance'],

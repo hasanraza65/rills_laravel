@@ -20,4 +20,16 @@ class Section extends Model
     {
         return $this->belongsTo(SchoolClass::class, 'school_class_id');
     }
+
+    // Named addedByUser (not addedBy) so its serialized key (added_by_user) doesn't
+    // collide with the existing added_by column and silently overwrite the raw id.
+    public function addedByUser()
+    {
+        return $this->belongsTo(User::class, 'added_by');
+    }
+
+    public function subjects()
+    {
+        return $this->hasMany(ClassSubject::class, 'section_id');
+    }
 }

@@ -40,6 +40,10 @@ class StaffController extends Controller
             $query->where('user_role', $request->role_id);
         }
 
+        if ($request->filled('is_active')) {
+            $query->where('is_active', $request->boolean('is_active'));
+        }
+
         return response()->json(['data' => $query->orderBy('name')->get()]);
     }
 
@@ -64,6 +68,7 @@ class StaffController extends Controller
             'branch_id'            => 'nullable|exists:branches,id',
             'email'                => 'nullable|email|unique:users,email',
             'password'             => 'nullable|string|min:6',
+            'is_active'            => 'nullable|boolean',
         ], [
             'cnic.unique'       => 'This CNIC is already registered to another user.',
             'contact_no.unique' => 'This contact number is already registered to another user.',
@@ -88,7 +93,7 @@ class StaffController extends Controller
                 'branch_id' => $data['branch_id'] ?? null,
                 'cnic'      => $data['cnic'] ?? null,
                 'phone'     => $data['contact_no'] ?? null,
-                'is_active' => 1,
+                'is_active' => $data['is_active'] ?? true,
             ]);
 
             $user->staffProfile()->create([
@@ -140,6 +145,7 @@ class StaffController extends Controller
             'branch_id'            => 'nullable|exists:branches,id',
             'email'                => ['nullable', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'password'             => 'nullable|string|min:6',
+            'is_active'            => 'nullable|boolean',
         ], [
             'cnic.unique'       => 'This CNIC is already registered to another user.',
             'contact_no.unique' => 'This contact number is already registered to another user.',
@@ -158,6 +164,7 @@ class StaffController extends Controller
                 'cnic'      => $data['cnic'] ?? null,
                 'phone'     => $data['contact_no'] ?? null,
                 'email'     => $data['email'] ?? $user->email,
+                'is_active' => array_key_exists('is_active', $data) ? $data['is_active'] : $user->is_active,
             ]);
 
             if (!empty($data['password'])) {
