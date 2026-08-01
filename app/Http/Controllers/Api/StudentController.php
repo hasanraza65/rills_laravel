@@ -15,9 +15,14 @@ class StudentController extends Controller
      */
     public function index(Request $request)
     {
-        return Student::with(['class', 'section', 'parent'])
-            ->where('branch_id', $request->branch_id)
-            ->get();
+        $query = Student::with(['class', 'section', 'parent'])
+            ->where('branch_id', $request->branch_id);
+
+        if ($request->filled('is_active')) {
+            $query->where('is_active', $request->boolean('is_active'));
+        }
+
+        return $query->get();
     }
 
     public function store(Request $request)
@@ -41,6 +46,7 @@ class StudentController extends Controller
             'parent_id' => 'nullable|exists:parent_profiles,id',
             'source' => 'nullable|string',
             'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
+            'is_active' => 'nullable|boolean',
 
             // ✅ NEW
             'fee_heads' => 'nullable|array',
@@ -51,6 +57,7 @@ class StudentController extends Controller
 
         $data['added_by'] = auth()->id();
         $data['admission_no'] = $data['admission_no'] ?? 'ADM' . time();
+        $data['is_active'] = $data['is_active'] ?? true;
 
         // photo
         if ($request->hasFile('photo')) {
@@ -111,7 +118,8 @@ class StudentController extends Controller
             'health_details' => 'nullable|string',
             'parent_id' => 'nullable|exists:parent_profiles,id',
             'source' => 'nullable|string',
-            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf'
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
+            'is_active' => 'nullable|boolean',
         ]);
 
         // Handle photo replacement

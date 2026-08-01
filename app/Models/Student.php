@@ -29,7 +29,8 @@ class Student extends Model
         'health_details',
         'parent_id',
         'source',
-        'attachments'
+        'attachments',
+        'is_active',
     ];
 
     protected $casts = [
@@ -37,7 +38,8 @@ class Student extends Model
         'health_issues' => 'array',
         'attachments' => 'array',
         'admission_date' => 'date',
-        'dob' => 'date'
+        'dob' => 'date',
+        'is_active' => 'boolean',
     ];
 
     public function class()
