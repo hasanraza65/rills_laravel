@@ -30,6 +30,12 @@ use App\Http\Controllers\Api\TimetableActivityController;
 use App\Http\Controllers\Api\TimetablePeriodSetController;
 use App\Http\Controllers\Api\TimetableController;
 use App\Http\Controllers\Api\TimetableSlotController;
+use App\Http\Controllers\Api\ExamGroupController;
+use App\Http\Controllers\Api\ExamGroupExamController;
+use App\Http\Controllers\Api\ExamScheduleController;
+use App\Http\Controllers\Api\ExamSubjectGroupController;
+use App\Http\Controllers\Api\ExamStudentSubjectController;
+use App\Http\Controllers\Api\ExamMarkController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -207,6 +213,48 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('teacher-timetable/{teacherId}', [TimetableController::class, 'teacherPrint'])->middleware('permission:timetable,view');
+
+    // =====================
+    // EXAMINATION
+    // =====================
+    Route::prefix('exam-groups')->group(function () {
+        Route::get('/',        [ExamGroupController::class, 'index'])->middleware('permission:examination,view');
+        Route::post('/',       [ExamGroupController::class, 'store'])->middleware('permission:examination,create');
+        Route::put('/{id}',    [ExamGroupController::class, 'update'])->middleware('permission:examination,edit');
+        Route::delete('/{id}', [ExamGroupController::class, 'destroy'])->middleware('permission:examination,delete');
+    });
+
+    Route::prefix('exam-group-exams')->group(function () {
+        Route::get('/',        [ExamGroupExamController::class, 'index'])->middleware('permission:examination,view');
+        Route::post('/',       [ExamGroupExamController::class, 'store'])->middleware('permission:examination,create');
+        Route::put('/{id}',    [ExamGroupExamController::class, 'update'])->middleware('permission:examination,edit');
+        Route::delete('/{id}', [ExamGroupExamController::class, 'destroy'])->middleware('permission:examination,delete');
+    });
+
+    Route::prefix('exam-schedules')->group(function () {
+        Route::get('/',          [ExamScheduleController::class, 'index'])->middleware('permission:examination,view');
+        Route::post('/bulk-save', [ExamScheduleController::class, 'bulkSave'])->middleware('permission:examination,create');
+        Route::delete('/{id}',   [ExamScheduleController::class, 'destroy'])->middleware('permission:examination,delete');
+    });
+
+    Route::prefix('exam-subject-groups')->group(function () {
+        Route::get('/',  [ExamSubjectGroupController::class, 'index'])->middleware('permission:examination,view');
+        Route::post('/', [ExamSubjectGroupController::class, 'store'])->middleware('permission:examination,create');
+    });
+
+    Route::prefix('exam-student-subjects')->group(function () {
+        Route::post('/lookup',           [ExamStudentSubjectController::class, 'lookup'])->middleware('permission:examination,view');
+        Route::post('/bulk-assign',      [ExamStudentSubjectController::class, 'bulkAssign'])->middleware('permission:examination,create');
+        Route::put('/{studentId}',       [ExamStudentSubjectController::class, 'setForStudent'])->middleware('permission:examination,edit');
+    });
+
+    Route::prefix('exam-marks')->group(function () {
+        Route::get('/',                    [ExamMarkController::class, 'index'])->middleware('permission:examination,view');
+        Route::get('/marksheet',           [ExamMarkController::class, 'marksheet'])->middleware('permission:examination,view');
+        Route::get('/student/{studentId}', [ExamMarkController::class, 'forStudent'])->middleware('permission:examination,view');
+        Route::post('/bulk-save',          [ExamMarkController::class, 'bulkSave'])->middleware('permission:examination,create');
+        Route::post('/bulk-save-for-student', [ExamMarkController::class, 'bulkSaveForStudent'])->middleware('permission:examination,create');
+    });
 
     // =====================
     // ROLES & PERMISSIONS
