@@ -11,6 +11,7 @@ class ExamGroup extends Model
 
     protected $fillable = [
         'branch_id',
+        'academic_session_id',
         'name',
         'exam_type',
         'description',
@@ -20,5 +21,10 @@ class ExamGroup extends Model
     public function exams()
     {
         return $this->hasMany(ExamGroupExam::class);
+    }
+
+    public function academicSession()
+    {
+        return $this->belongsTo(AcademicSession::class);
     }
 }

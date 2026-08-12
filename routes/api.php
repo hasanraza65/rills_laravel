@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\ExamScheduleController;
 use App\Http\Controllers\Api\ExamSubjectGroupController;
 use App\Http\Controllers\Api\ExamStudentSubjectController;
 use App\Http\Controllers\Api\ExamMarkController;
+use App\Http\Controllers\Api\AcademicSessionController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -254,6 +255,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/student/{studentId}', [ExamMarkController::class, 'forStudent'])->middleware('permission:examination,view');
         Route::post('/bulk-save',          [ExamMarkController::class, 'bulkSave'])->middleware('permission:examination,create');
         Route::post('/bulk-save-for-student', [ExamMarkController::class, 'bulkSaveForStudent'])->middleware('permission:examination,create');
+    });
+
+    // =====================
+    // ACADEMIC SESSIONS (System Settings)
+    // =====================
+    Route::prefix('academic-sessions')->group(function () {
+        Route::get('/',        [AcademicSessionController::class, 'index'])->middleware('permission:academic_sessions,view');
+        Route::post('/',       [AcademicSessionController::class, 'store'])->middleware('permission:academic_sessions,create');
+        Route::put('/{id}',    [AcademicSessionController::class, 'update'])->middleware('permission:academic_sessions,edit');
+        Route::delete('/{id}', [AcademicSessionController::class, 'destroy'])->middleware('permission:academic_sessions,delete');
     });
 
     // =====================

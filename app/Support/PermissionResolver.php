@@ -30,6 +30,7 @@ class PermissionResolver
         ['slug' => 'visitors',           'name' => 'Visitors / Gate',     'group' => 'Administration'],
         ['slug' => 'library',            'name' => 'Library',             'group' => 'Administration'],
         ['slug' => 'roles',              'name' => 'Roles & Permissions', 'group' => 'Administration'],
+        ['slug' => 'academic_sessions',  'name' => 'Academic Sessions',   'group' => 'Administration'],
         ['slug' => 'reports',            'name' => 'Reports',             'group' => 'Reports'],
     ];
 
