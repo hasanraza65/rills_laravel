@@ -14,7 +14,8 @@ class ExamGroupController extends Controller
         // nothing and returns an empty list with a 200 — a silent failure.
         $branchId = $request->branch_id ?: auth()->user()->branch_id;
 
-        return ExamGroup::when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+        return ExamGroup::with('academicSession:id,name')
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->latest()
             ->get();
     }
@@ -23,6 +24,7 @@ class ExamGroupController extends Controller
     {
         $data = $request->validate([
             'branch_id' => 'required|exists:branches,id',
+            'academic_session_id' => 'nullable|exists:academic_sessions,id',
             'name' => 'required|string',
             'exam_type' => 'required|string',
             'description' => 'nullable|string',
@@ -39,6 +41,7 @@ class ExamGroupController extends Controller
         $group = ExamGroup::findOrFail($id);
 
         $data = $request->validate([
+            'academic_session_id' => 'nullable|exists:academic_sessions,id',
             'name' => 'required|string',
             'exam_type' => 'required|string',
             'description' => 'nullable|string',

@@ -41,7 +41,7 @@ class RoleSeeder extends Seeder
                 'dashboard', 'students', 'families', 'diaries', 'syllabus',
                 'lesson_plans', 'question_bank', 'student_attendance', 'staff_attendance',
                 'fees', 'staff', 'branches', 'classes_sections', 'visitors',
-                'library', 'roles', 'reports', 'timetable', 'examination',
+                'library', 'roles', 'reports', 'timetable', 'examination', 'academic_sessions',
             ]),
 
             // 2 - Admin: full access (same as super admin, enforced at app layer)
@@ -49,7 +49,7 @@ class RoleSeeder extends Seeder
                 'dashboard', 'students', 'families', 'diaries', 'syllabus',
                 'lesson_plans', 'question_bank', 'student_attendance', 'staff_attendance',
                 'fees', 'staff', 'branches', 'classes_sections', 'visitors',
-                'library', 'roles', 'reports', 'timetable', 'examination',
+                'library', 'roles', 'reports', 'timetable', 'examination', 'academic_sessions',
             ]),
 
             // 3 - Branch Admin
@@ -72,6 +72,7 @@ class RoleSeeder extends Seeder
                 ['reports',            true,  false, false, false],
                 ['timetable',          true,  true,  true,  true ],
                 ['examination',        true,  true,  true,  true ],
+                ['academic_sessions',  true,  true,  true,  true ],
             ],
 
             // 4 - Teacher
