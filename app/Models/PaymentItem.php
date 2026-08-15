@@ -7,7 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class PaymentItem extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'payment_id',
+        'invoice_item_id',
+        'paid_amount',
+    ];
 
     public function payment()
     {

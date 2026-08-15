@@ -9,7 +9,17 @@ class Payment extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'invoice_id',
+        'parent_id',
+        'amount_paid',
+        'wallet_used',
+        'extra_added_to_wallet',
+        'payment_method',
+        'bank_name',
+        'reference_no',
+        'payment_date',
+    ];
 
     public function items()
     {

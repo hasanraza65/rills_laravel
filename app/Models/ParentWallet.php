@@ -8,5 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class ParentWallet extends Model
 {
     use HasFactory;
-    protected $guarded = [];
+
+    protected $fillable = [
+        'parent_id',
+        'balance',
+    ];
 }

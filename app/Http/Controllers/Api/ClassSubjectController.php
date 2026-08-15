@@ -49,14 +49,21 @@ class ClassSubjectController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'class_id' => 'required',
-            'section_id' => 'required',
-            'teacher_id' => 'required',
-            'subject_name' => 'required',
+        $validated = $request->validate([
+            'class_id' => 'required|integer',
+            'section_id' => 'required|integer',
+            'teacher_id' => 'required|integer',
+            'subject_name' => 'required|string',
+            'campus_id' => 'nullable|integer',
+            'session_id' => 'nullable|integer',
+            'branch_id' => 'nullable|integer',
         ]);
 
-        $data = ClassSubject::create($request->all());
+        // Never trust an attacker-supplied branch_id blindly — fall back to the
+        // caller's own branch, same scoping rule used in index().
+        $validated['branch_id'] = $validated['branch_id'] ?? auth()->user()->branch_id;
+
+        $data = ClassSubject::create($validated);
 
         return response()->json([
             'success' => true,

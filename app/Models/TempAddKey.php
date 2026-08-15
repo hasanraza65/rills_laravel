@@ -9,7 +9,16 @@ class TempAddKey extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'added_by',
+        'branch_id',
+        'key',
+        'visitor_name',
+        'address',
+        'purpose',
+        'remarks',
+        'students',
+    ];
 
     protected $casts = [
         'students' => 'array',

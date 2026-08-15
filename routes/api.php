@@ -53,8 +53,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+// Stricter throttle than the default 60/min API limiter — these are unauthenticated
+// endpoints attackers can otherwise hammer for credential stuffing / brute force.
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -63,7 +65,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/dashboard/overview', [DashboardController::class, 'overview']);
 
-    Route::apiResource('visitors', VisitorController::class);
+    // Split (rather than apiResource) so each verb carries its own
+    // permission:visitors,<action> check — was previously auth-only with no RBAC gate.
+    Route::get('visitors',           [VisitorController::class, 'index'])->middleware('permission:visitors,view');
+    Route::get('visitors/{id}',      [VisitorController::class, 'show'])->middleware('permission:visitors,view');
+    Route::post('visitors',          [VisitorController::class, 'store'])->middleware('permission:visitors,create');
+    Route::put('visitors/{id}',      [VisitorController::class, 'update'])->middleware('permission:visitors,edit');
+    Route::patch('visitors/{id}',    [VisitorController::class, 'update'])->middleware('permission:visitors,edit');
+    Route::delete('visitors/{id}',   [VisitorController::class, 'destroy'])->middleware('permission:visitors,delete');
 
     Route::apiResource('classes', SchoolClassController::class);
 
@@ -81,7 +90,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/students_by_parent/{id}', [StudentController::class, 'studentsByParent']);
 
-    Route::apiResource('temp-add-keys', TempAddKeyController::class);
+    // Same fix as visitors above — temp-add-keys (visitor gate-pass) was previously
+    // reachable by any authenticated user regardless of role/permissions.
+    Route::get('temp-add-keys',         [TempAddKeyController::class, 'index'])->middleware('permission:visitors,view');
+    Route::get('temp-add-keys/{id}',    [TempAddKeyController::class, 'show'])->middleware('permission:visitors,view');
+    Route::post('temp-add-keys',        [TempAddKeyController::class, 'store'])->middleware('permission:visitors,create');
+    Route::put('temp-add-keys/{id}',    [TempAddKeyController::class, 'update'])->middleware('permission:visitors,edit');
+    Route::patch('temp-add-keys/{id}',  [TempAddKeyController::class, 'update'])->middleware('permission:visitors,edit');
+    Route::delete('temp-add-keys/{id}', [TempAddKeyController::class, 'destroy'])->middleware('permission:visitors,delete');
 
     Route::post('/verify_admission_key', [AuthController::class, 'checkTempKey']);
 

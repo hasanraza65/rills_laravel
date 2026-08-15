@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use App\Models\Student;
 use App\Models\StudentFeeHead;
 
@@ -30,7 +31,7 @@ class StudentController extends Controller
         $data = $request->validate([
             'branch_id' => 'required',
             'admission_date' => 'nullable|date',
-            'photo' => 'nullable|file|mimes:jpg,jpeg,png',
+            'photo' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
             'name' => 'nullable|string',
             'dob' => 'nullable|date',
             'gender' => 'nullable|string',
@@ -45,7 +46,7 @@ class StudentController extends Controller
             'health_details' => 'nullable|string',
             'parent_id' => 'nullable|exists:parent_profiles,id',
             'source' => 'nullable|string',
-            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'is_active' => 'nullable|boolean',
 
             // ✅ NEW
@@ -59,10 +60,11 @@ class StudentController extends Controller
         $data['admission_no'] = $data['admission_no'] ?? 'ADM' . time();
         $data['is_active'] = $data['is_active'] ?? true;
 
-        // photo
+        // photo — generate the stored filename ourselves; never trust the client's
+        // original filename (path traversal / filename injection risk).
         if ($request->hasFile('photo')) {
             $file = $request->file('photo');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('students/photos'), $filename);
             $data['photo'] = 'students/photos/' . $filename;
         }
@@ -71,7 +73,7 @@ class StudentController extends Controller
         if ($request->hasFile('attachments')) {
             $attachments = [];
             foreach ($request->file('attachments') as $file) {
-                $filename = time() . '_' . $file->getClientOriginalName();
+                $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
                 $file->move(public_path('students/attachments'), $filename);
                 $attachments[] = 'students/attachments/' . $filename;
             }
@@ -103,7 +105,7 @@ class StudentController extends Controller
 
         $data = $request->validate([
             'admission_date' => 'nullable|date',
-            'photo' => 'nullable|file|mimes:jpg,jpeg,png',
+            'photo' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
             'name' => 'nullable|string',
             'dob' => 'nullable|date',
             'gender' => 'nullable|string',
@@ -118,14 +120,14 @@ class StudentController extends Controller
             'health_details' => 'nullable|string',
             'parent_id' => 'nullable|exists:parent_profiles,id',
             'source' => 'nullable|string',
-            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'is_active' => 'nullable|boolean',
         ]);
 
         // Handle photo replacement
         if ($request->hasFile('photo')) {
             $file = $request->file('photo');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('students/photos'), $filename);
             $data['photo'] = 'students/photos/' . $filename;
         }
@@ -134,7 +136,7 @@ class StudentController extends Controller
         if ($request->hasFile('attachments')) {
             $attachments = $student->attachments ?? [];
             foreach ($request->file('attachments') as $file) {
-                $filename = time() . '_' . $file->getClientOriginalName();
+                $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
                 $file->move(public_path('students/attachments'), $filename);
                 $attachments[] = 'students/attachments/' . $filename;
             }

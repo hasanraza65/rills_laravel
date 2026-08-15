@@ -8,7 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class FeeHead extends Model
 {
     use HasFactory;
-    protected $guarded = [];
+
+    protected $fillable = [
+        'added_by',
+        'branch_id',
+        'section_id',
+        'head_name',
+        'head_amount',
+        'head_frequency',
+    ];
 
     public function section()
     {

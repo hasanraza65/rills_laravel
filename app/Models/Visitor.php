@@ -9,7 +9,14 @@ class Visitor extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'added_by',
+        'branch_id',
+        'name',
+        'phone',
+        'cnic',
+        'reason',
+    ];
 
     public function addedBy()
     {

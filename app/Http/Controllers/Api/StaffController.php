@@ -9,6 +9,7 @@ use App\Support\RoleHierarchy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class StaffController extends Controller
@@ -67,7 +68,7 @@ class StaffController extends Controller
             'user_role'            => ['required', Rule::in(RoleHierarchy::assignableRoleIds($caller->user_role))],
             'branch_id'            => 'nullable|exists:branches,id',
             'email'                => 'nullable|email|unique:users,email',
-            'password'             => 'nullable|string|min:6',
+            'password'             => 'nullable|string|min:8',
             'is_active'            => 'nullable|boolean',
         ], [
             'cnic.unique'       => 'This CNIC is already registered to another user.',
@@ -83,7 +84,10 @@ class StaffController extends Controller
             // Derive login credentials. Email/password are auto-generated when not
             // supplied so the record is a valid, login-capable user.
             $email = $data['email'] ?? $this->generateEmail($data);
-            $plainPassword = $data['password'] ?? ($data['cnic'] ?? $data['contact_no'] ?? 'password');
+            // NOTE: falling back to CNIC/contact number as the default password is an
+            // intentional product decision (staff log in with a value they already know).
+            // Only the truly-unidentified case gets a random password, never a static guessable one.
+            $plainPassword = $data['password'] ?? $data['cnic'] ?? $data['contact_no'] ?? Str::random(12);
 
             $user = User::create([
                 'name'      => $data['name'],
@@ -144,7 +148,7 @@ class StaffController extends Controller
             'user_role'            => ['required', Rule::in(RoleHierarchy::assignableRoleIds($caller->user_role))],
             'branch_id'            => 'nullable|exists:branches,id',
             'email'                => ['nullable', 'email', Rule::unique('users', 'email')->ignore($user->id)],
-            'password'             => 'nullable|string|min:6',
+            'password'             => 'nullable|string|min:8',
             'is_active'            => 'nullable|boolean',
         ], [
             'cnic.unique'       => 'This CNIC is already registered to another user.',
